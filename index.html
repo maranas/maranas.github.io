@@ -11,29 +11,40 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:        #0d0d0d;
-      --green:     #00ff41;
+      --bg: #0d0d0d;
+      --green: #00ff41;
       --green-dim: #00aa2b;
-      --green-lo:  #005514;
-      --red:       #ff4444;
-      --yellow:    #ffd700;
-      --blue:      #4fc3f7;
+      --green-lo: #005514;
+      --red: #ff4444;
+      --yellow: #ffd700;
+      --blue: #4fc3f7;
       --mono: "JetBrains Mono", "Cascadia Code", "Fira Mono", "Consolas", monospace;
     }
 
+    html, body { height: 100%; }
     html { background: var(--bg); color: var(--green); font-family: var(--mono); }
 
     body {
-      min-height: 100vh;
-      padding: 3rem 1.5rem 5rem;
+      height: 100vh;
+      padding: 3rem 1.5rem 2rem;
       background-image: repeating-linear-gradient(
         to bottom,
         transparent 0px, transparent 3px,
         rgba(0,0,0,.12) 3px, rgba(0,0,0,.12) 4px
       );
+      display: flex;
+      flex-direction: column;
     }
 
-    .terminal { max-width: 720px; margin: 0 auto; }
+    .terminal {
+      max-width: 720px;
+      margin: 0 auto;
+      width: 100%;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
 
     .titlebar {
       display: flex; align-items: center; gap: .75rem;
@@ -50,9 +61,14 @@
       padding: 2rem 2rem 1.5rem;
       line-height: 1.85;
       cursor: text;
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
     }
 
-    #history-output { margin-bottom: .5rem; }
+    #history-output { flex: 1; margin-bottom: .5rem; }
 
     .entry { margin-bottom: .25rem; }
     .entry-cmd { display: flex; flex-wrap: wrap; gap: .4rem; align-items: baseline; font-size: .95rem; }
@@ -91,14 +107,14 @@
     @media (prefers-reduced-motion: reduce) { .cursor { animation: none; } }
 
     @media (max-width: 480px) {
-      body { padding: 1rem .75rem 4rem; }
+      body { padding: 1rem .75rem 1rem; }
       .window { padding: 1.25rem 1rem 1.5rem; }
       .entry-cmd, .entry-out, #cmd-input { font-size: .82rem; }
     }
   </style>
 </head>
 <body>
-<main class="terminal" role="main">
+<main class="terminal" role="main" style="flex:1;display:flex;flex-direction:column;min-height:0;">
 
   <div class="titlebar" aria-hidden="true">
     <div class="titlebar-dots">
@@ -159,11 +175,11 @@ let histIdx = -1;        // arrow-key position in history
 let tabCandidates = [];  // last tab-completion candidates
 let tabIdx = 0;
 
-const histOut   = document.getElementById("history-output");
-const input     = document.getElementById("cmd-input");
+const histOut = document.getElementById("history-output");
+const input = document.getElementById("cmd-input");
 const livePrompt = document.getElementById("live-prompt");
-const titlebar  = document.getElementById("titlebar-text");
-const win       = document.getElementById("window");
+const titlebar = document.getElementById("titlebar-text");
+const win = document.getElementById("window");
 
 function focusInput() { input.focus(); }
 window.addEventListener("load", focusInput);
@@ -208,10 +224,10 @@ function appendEntry(cmdText, outputHTML, cls = "") {
   win.scrollTop = win.scrollHeight;
 }
 
-function err(msg)  { return `<span style="color:var(--red)">${escHtml(msg)}</span>`; }
-function dim(msg)  { return `<span style="color:var(--green-dim)">${escHtml(msg)}</span>`; }
+function err(msg) { return `<span style="color:var(--red)">${escHtml(msg)}</span>`; }
+function dim(msg) { return `<span style="color:var(--green-dim)">${escHtml(msg)}</span>`; }
 function blue(msg) { return `<span class="dir-name">${escHtml(msg)}/</span>`; }
-function escHtml(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function escHtml(s) { return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
 
 const COMMANDS = {
 
@@ -354,9 +370,9 @@ function tabComplete() {
     cycle(matches, prefix, "");
   } else {
     // Complete argument
-    const cmd    = parts[0];
+    const cmd = parts[0];
     const prefix = parts[parts.length - 1];
-    const node   = FS[cwd];
+    const node = FS[cwd];
     let candidates = [];
 
     if (cmd === "cd") {
@@ -430,7 +446,7 @@ input.addEventListener("keydown", e => {
     } else {
       const out = fn(args);
       if (out !== null) appendEntry(raw, out ?? "");
-      else              appendEntry(raw, ""); // clear already wiped histOut
+      else appendEntry(raw, ""); // clear already wiped histOut
     }
 
     win.scrollTop = win.scrollHeight;
