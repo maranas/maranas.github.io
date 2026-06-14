@@ -1,0 +1,1185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FIFA WC 2026 — Match Centre</title>
+<style>
+:root {
+  --bg: #07111f; --surface: #0c1a2e; --card: #0f2040; --border: #1a3060;
+  --accent: #d4a017; --text: #b8cce0; --text-dim: #4e6a88; --text-bright: #e8f2ff;
+  --red: #cc3333; --blue: #2277cc;
+  --stamina-hi: #25a85c; --stamina-mid: #d4900a; --stamina-lo: #cc3333;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; font-size: 17px; background: var(--bg); color: var(--text); }
+
+.topbar {
+  display: flex; align-items: center; gap: 10px; padding: 0 10px; height: 44px;
+  background: #040c18; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.logo { font-size: 19px; font-weight: 700; color: var(--accent); letter-spacing: 1px; white-space: nowrap; }
+.match-sel {
+  flex: 1; max-width: 400px; background: var(--surface); border: 1px solid var(--border);
+  color: var(--text-bright); padding: 4px 8px; border-radius: 2px; font-size: 16px;
+}
+.match-sel:focus { outline: 1px solid var(--accent); }
+.top-score { font-size: 24px; font-weight: 700; color: var(--text-bright); letter-spacing: 3px; }
+.top-min { font-size: 17px; font-weight: 700; color: var(--accent); min-width: 28px; }
+.live-pill {
+  background: var(--red); color: #fff; font-size: 13px; font-weight: 700;
+  padding: 2px 7px; border-radius: 2px; letter-spacing: 1px; animation: blink 1.6s infinite;
+}
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.4} }
+.top-status { font-size: 14px; color: var(--text-dim); }
+.refbtn {
+  margin-left: auto; background: var(--surface); border: 1px solid var(--border);
+  color: var(--text-dim); padding: 4px 10px; border-radius: 2px; cursor: pointer; font-size: 16px;
+}
+.refbtn:hover { color: var(--accent); border-color: var(--accent); }
+
+/* LAYOUT — 30/40/30 */
+.layout { display: grid; grid-template-columns: 30% 40% 30%; height: calc(100vh - 40px); overflow: hidden; }
+
+/* TEAM PANELS */
+.team-panel { display: flex; flex-direction: column; background: var(--surface); overflow: hidden; border-right: 1px solid var(--border); }
+.team-panel.away { border-right: none; border-left: 1px solid var(--border); }
+.team-head {
+  display: flex; align-items: center; gap: 6px; padding: 6px 8px; background: var(--card);
+  border-bottom: 1px solid var(--border); flex-shrink: 0; min-height: 38px;
+}
+.team-flag { font-size: 23px; }
+.team-hname { font-size: 16px; font-weight: 700; color: var(--text-bright); text-transform: uppercase; letter-spacing: .4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.team-form { margin-left: auto; font-size: 14px; color: var(--text-dim); flex-shrink: 0; }
+
+/* player table — 7 cols: # | name | G | A | shots | passes | card | stamina */
+.pthead {
+  display: grid; grid-template-columns: 22px 1fr 17px 17px 19px 26px 17px 50px;
+  gap: 2px; padding: 4px 6px; align-items: center;
+  background: var(--card); border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.thc { font-size: 12px; color: var(--text-dim); text-transform: uppercase; text-align: center; }
+.thc.nl { text-align: left; }
+.pscroll { flex: 1; overflow-y: auto; }
+.pscroll::-webkit-scrollbar { width: 3px; }
+.pscroll::-webkit-scrollbar-thumb { background: var(--border); }
+.prow {
+  display: grid; grid-template-columns: 22px 1fr 17px 17px 19px 26px 17px 50px;
+  gap: 2px; align-items: center; padding: 3px 6px;
+  border-bottom: 1px solid rgba(255,255,255,.03); min-height: 30px;
+}
+.prow:hover { background: rgba(255,255,255,.03); }
+.prow.suboff { opacity: .4; }
+.prow.subon { background: rgba(37,168,92,.07); }
+.pnum { font-size: 13px; color: var(--text-dim); text-align: center; }
+.pname { font-size: 14px; color: var(--text-bright); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pname.gk { color: #f0c060; }
+.pname.cap::after { content: ' ©'; font-size: 12px; color: var(--accent); }
+.sc { font-size: 13px; text-align: center; color: var(--text-dim); }
+.sc.v { color: var(--text-bright); font-weight: 600; }
+.sc.goal { color: #3dd68c; font-weight: 700; }
+.card-box { display: flex; justify-content: center; align-items: center; }
+.ycard { width: 9px; height: 13px; border-radius: 1px; background: #e0c000; display: inline-block; }
+.rcard { width: 9px; height: 13px; border-radius: 1px; background: #cc2222; display: inline-block; }
+.yrcard { display: inline-flex; gap: 1px; }
+.yrcard .ycard,.yrcard .rcard { width: 7px; height: 11px; }
+.stam-wrap { background: rgba(255,255,255,.1); border-radius: 2px; height: 7px; width: 100%; overflow: hidden; }
+.stam-fill { height: 100%; border-radius: 2px; transition: width 1s; }
+.stam-km { font-size: 11px; color: var(--text-dim); text-align: center; margin-top: 1px; }
+.sec-div {
+  font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .5px;
+  padding: 3px 6px; background: rgba(0,0,0,.3); border-bottom: 1px solid var(--border);
+}
+
+/* CENTRE */
+.center { display: flex; flex-direction: column; background: var(--bg); overflow: hidden; }
+.scoreboard { background: var(--card); border-bottom: 1px solid var(--border); padding: 10px 16px; flex-shrink: 0; }
+.sb-teams { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 4px; }
+.sb-team { font-size: 16px; color: var(--text-dim); text-transform: uppercase; letter-spacing: .5px; }
+.sb-score { font-size: 46px; font-weight: 700; color: var(--text-bright); letter-spacing: 6px; text-align: center; }
+.sb-stat { font-size: 14px; color: var(--text-dim); text-align: center; margin-top: 2px; }
+.evlegend {
+  display: flex; gap: 14px; justify-content: center; flex-wrap: wrap;
+  padding: 5px 10px; background: var(--card); border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.evl { display: flex; align-items: center; gap: 3px; font-size: 13px; color: var(--text-dim); }
+.tabs { display: flex; background: var(--card); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.tab {
+  flex: 1; padding: 8px 4px; font-size: 14px; text-transform: uppercase; letter-spacing: .5px;
+  text-align: center; cursor: pointer; color: var(--text-dim); border-bottom: 2px solid transparent;
+}
+.tab.on { color: var(--accent); border-bottom-color: var(--accent); }
+.tab:hover:not(.on) { color: var(--text); background: rgba(255,255,255,.02); }
+.tcontent { flex: 1; overflow-y: auto; padding: 10px 14px; }
+.tcontent::-webkit-scrollbar { width: 3px; }
+.tcontent::-webkit-scrollbar-thumb { background: var(--border); }
+
+/* STATS */
+.sgrp { font-size: 13px; color: var(--accent); text-transform: uppercase; letter-spacing: .8px; padding: 6px 0 4px; border-bottom: 1px solid rgba(212,160,23,.15); margin-bottom: 8px; }
+.sitem { margin-bottom: 10px; }
+.slbl { font-size: 13px; color: var(--text-dim); text-transform: uppercase; text-align: center; letter-spacing: .3px; margin-bottom: 4px; }
+.sbars { display: flex; align-items: center; gap: 8px; }
+.sval { font-size: 17px; font-weight: 600; color: var(--text-bright); min-width: 40px; }
+.sval.h { text-align: right; }
+.sval.a { text-align: left; }
+.sbtrack { flex: 1; display: flex; justify-content: center; align-items: center; gap: 1px; }
+.sbh { height: 6px; border-radius: 2px 0 0 2px; background: var(--blue); transition: width .5s; min-width: 2px; }
+.sba { height: 6px; border-radius: 0 2px 2px 0; background: var(--red); transition: width .5s; min-width: 2px; }
+
+/* PBP */
+.pbp { display: flex; gap: 8px; align-items: flex-start; padding: 6px 0; border-bottom: 1px solid rgba(255,255,255,.04); }
+.pbp-min { font-size: 14px; color: var(--accent); font-weight: 700; min-width: 36px; flex-shrink: 0; }
+.pbp-ico { min-width: 16px; text-align: center; font-size: 17px; flex-shrink: 0; }
+.pbp-txt { font-size: 16px; color: var(--text); line-height: 1.4; flex: 1; }
+.pbp-team { font-size: 13px; color: var(--text-dim); margin-top: 1px; }
+.c-goal { color: #3dd68c; } .c-yel { color: #e0c010; } .c-red { color: var(--red); }
+.c-sub { color: #5ba8f5; } .c-var { color: #b39dff; }
+
+/* PITCH VIEW */
+.pitch-wrap {
+  flex-shrink: 0; position: relative; overflow: hidden;
+  background: var(--card); border-bottom: 1px solid var(--border);
+}
+#pitchSvg { display: block; width: 100%; height: 100%; }
+.pitch-placeholder {
+  display: flex; align-items: center; justify-content: center;
+  height: 100%; font-size: 14px; color: var(--text-dim);
+}
+
+.nodata { font-size: 16px; color: var(--text-dim); padding: 24px 10px; text-align: center; line-height: 1.8; }
+.errbox { font-size: 16px; color: #ee5555; background: rgba(200,40,40,.1); border: 1px solid rgba(200,40,40,.3); border-radius: 3px; padding: 10px 12px; line-height: 1.6; }
+.errbox small { display: block; margin-top: 6px; color: var(--text-dim); }
+.loader-wrap { display: flex; align-items: center; justify-content: center; padding: 30px; flex-direction: column; gap: 10px; }
+.spinner { width: 24px; height: 24px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+select option { background: #0c1a2e; color: #b8cce0; }
+select optgroup { background: #040c18; color: #4e6a88; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">⚽ WC 2026</div>
+  <select class="match-sel" id="matchSel"><option value="">Loading WC 2026 schedule…</option></select>
+  <div class="top-min" id="topMin"></div>
+  <div class="top-score" id="topScore">– : –</div>
+  <div class="live-pill" id="livePill" style="display:none">LIVE</div>
+  <div class="top-status" id="topStatus"></div>
+  <button class="refbtn" onclick="doRefresh()">↻ Refresh</button>
+</div>
+
+<div class="layout">
+  <div class="team-panel" id="homePanel">
+    <div class="team-head">
+      <span class="team-flag" id="homeFlag">🏴</span>
+      <span class="team-hname" id="homeName">Home</span>
+      <span class="team-form" id="homeForm"></span>
+    </div>
+    <div class="pthead">
+      <div class="thc">#</div><div class="thc nl">Player</div>
+      <div class="thc" title="Goals">G</div><div class="thc" title="Assists">A</div>
+      <div class="thc" title="Shots on Target">SH</div>
+      <div class="thc" title="Passes Completed">PS</div>
+      <div class="thc" title="Card">C</div>
+      <div class="thc">Stamina</div>
+    </div>
+    <div class="pscroll" id="homeRows"><div class="nodata">Select a match</div></div>
+  </div>
+
+  <div class="center">
+    <div class="scoreboard">
+      <div class="sb-teams">
+        <div class="sb-team" id="sbHome">HOME</div>
+        <div class="sb-score" id="sbScore">– : –</div>
+        <div class="sb-team" id="sbAway">AWAY</div>
+      </div>
+      <div class="sb-stat" id="sbStat">Select a match to begin</div>
+    </div>
+    <div class="pitch-wrap" id="pitchWrap" style="height:272px">
+      <div class="pitch-placeholder" id="pitchPlaceholder">Select a match to see formations</div>
+      <svg id="pitchSvg" viewBox="0 0 420 272" xmlns="http://www.w3.org/2000/svg" style="display:none"></svg>
+    </div>
+    <div class="tabs">
+      <div class="tab on" id="t-stats" onclick="setTab('stats')">Statistics</div>
+      <div class="tab" id="t-pbp" onclick="setTab('pbp')">Play by play</div>
+    </div>
+    <div class="tcontent" id="statsPane"><div class="nodata">Select a match to view statistics</div></div>
+    <div class="tcontent" id="pbpPane" style="display:none"><div class="nodata">Select a match to view commentary</div></div>
+  </div>
+
+  <div class="team-panel away" id="awayPanel">
+    <div class="team-head">
+      <span class="team-flag" id="awayFlag">🏴</span>
+      <span class="team-hname" id="awayName">Away</span>
+      <span class="team-form" id="awayForm"></span>
+    </div>
+    <div class="pthead">
+      <div class="thc">#</div><div class="thc nl">Player</div>
+      <div class="thc" title="Goals">G</div><div class="thc" title="Assists">A</div>
+      <div class="thc" title="Shots on Target">SH</div>
+      <div class="thc" title="Passes Completed">PS</div>
+      <div class="thc" title="Card">C</div>
+      <div class="thc">Stamina</div>
+    </div>
+    <div class="pscroll" id="awayRows"><div class="nodata">Select a match</div></div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+// FIFA API — called from the browser (same origin or CORS-permissive)
+//
+// KEY DISCOVERIES from network inspection:
+//   1. live/timeline endpoints use ONLY IdMatch (no comp/season/stage in path)
+//      e.g. api.fifa.com/api/v3/live/football/400021447
+//      e.g. api.fifa.com/api/v3/timelines/400021447
+//
+//   2. Stats come from a DIFFERENT domain: fdh-api.fifa.com/v1/stats/
+//      The ID used is Properties.IdIFES (e.g. "151613"), NOT IdMatch
+//      Team stats: fdh-api.fifa.com/v1/stats/match/151613/teams.json
+//      Player stats: fdh-api.fifa.com/v1/stats/match/151613/players.json
+//
+//   3. Stats format: { "teamId": [["StatName", value, bool], ...], ... }
+//
+//   4. MatchStatus: 0=Finished, 1=Live, 3=Upcoming
+//
+//   5. Calendar endpoint for schedule: api.fifa.com/api/v3/calendar/matches
+//      Individual match: api.fifa.com/api/v3/calendar/{IdMatch}
+// ═══════════════════════════════════════════════════════════════════════
+
+const FIFA  = 'https://api.fifa.com/api/v3';
+const FDH   = 'https://fdh-api.fifa.com/v1/stats';
+const COMP  = 17;
+const LANG  = 'en-GB';
+
+// Max km per position per 90 min (for stamina bar)
+const STAM_MAX = { GK: 6.0, D: 13.0, M: 15.0, F: 14.0 };
+
+let allMatches = [];
+let SEASON_2026 = null;
+let currentTab = 'stats';
+let liveTimer  = null;
+
+// ── FLAG MAP ──────────────────────────────────────────────────────────
+const FLAGS = {
+  ARG:'🇦🇷',AUS:'🇦🇺',AUT:'🇦🇹',BEL:'🇧🇪',BIH:'🇧🇦',BOL:'🇧🇴',BRA:'🇧🇷',
+  CAN:'🇨🇦',CHI:'🇨🇱',CMR:'🇨🇲',COD:'🇨🇩',COL:'🇨🇴',CPV:'🇨🇻',CRC:'🇨🇷',
+  CRO:'🇭🇷',CUW:'🇨🇼',CZE:'🇨🇿',DEN:'🇩🇰',ECU:'🇪🇨',EGY:'🇪🇬',
+  ENG:'🏴󠁧󠁢󠁥󠁮󠁧󠁿',ESP:'🇪🇸',ETH:'🇪🇹',FIJ:'🇫🇯',FRA:'🇫🇷',GER:'🇩🇪',
+  GHA:'🇬🇭',GRE:'🇬🇷',GUI:'🇬🇳',HON:'🇭🇳',HUN:'🇭🇺',IDN:'🇮🇩',IRN:'🇮🇷',
+  IRQ:'🇮🇶',ISR:'🇮🇱',ITA:'🇮🇹',JAM:'🇯🇲',JOR:'🇯🇴',JPN:'🇯🇵',KOR:'🇰🇷',
+  KSA:'🇸🇦',MAR:'🇲🇦',MEX:'🇲🇽',MLI:'🇲🇱',MOR:'🇲🇦',NED:'🇳🇱',NGA:'🇳🇬',
+  NOR:'🇳🇴',NZL:'🇳🇿',PAN:'🇵🇦',PAR:'🇵🇾',PER:'🇵🇪',PHI:'🇵🇭',POL:'🇵🇱',
+  POR:'🇵🇹',QAT:'🇶🇦',ROM:'🇷🇴',RSA:'🇿🇦',SCO:'🏴󠁧󠁢󠁳󠁣󠁴󠁿',SEN:'🇸🇳',
+  SER:'🇷🇸',SLV:'🇸🇻',SUI:'🇨🇭',SVK:'🇸🇰',SWE:'🇸🇪',TAN:'🇹🇿',THA:'🇹🇭',
+  TRI:'🇹🇹',TUN:'🇹🇳',TUR:'🇹🇷',UKR:'🇺🇦',URU:'🇺🇾',USA:'🇺🇸',UZB:'🇺🇿',
+  VEN:'🇻🇪',WAL:'🏴󠁧󠁢󠁷󠁬󠁳󠁿',ALG:'🇩🇿',
+};
+const flag = c => FLAGS[String(c||'').toUpperCase()] || '🏴';
+
+// ── HELPERS ───────────────────────────────────────────────────────────
+const get = async url => {
+  const r = await fetch(url, { headers: { Accept: 'application/json' }, mode: 'cors' });
+  if (!r.ok) throw new Error(`HTTP ${r.status} ${url}`);
+  return r.json();
+};
+
+// FIFA wraps text in [{ Locale, Description }] arrays
+const tl = v => {
+  if (!v) return '';
+  if (typeof v === 'string') return v;
+  if (Array.isArray(v)) return v[0]?.Description || '';
+  return '';
+};
+
+const pName = p => tl(p.PlayerName) || tl(p.ShortName) || tl(p.Name) || [p.FirstName, p.LastName].filter(Boolean).join(' ') || '?';
+
+const posCode = pos => {
+  const s = (typeof pos === 'string' ? pos : tl(pos) || '').toUpperCase();
+  if (/GK|GOAL/.test(s) || pos === 0) return 'GK';
+  if (/DEF|BACK|CB|LB|RB|WB/.test(s) || pos === 1) return 'D';
+  if (/FWD|ATT|CF|ST|LW|RW|WING/.test(s) || pos === 3) return 'F';
+  return 'M'; // pos===2 or midfield
+};
+
+// Stats from fdh-api are arrays of ["StatName", value, bool]
+// Convert to a simple object for fast lookup
+const parseStatArray = arr => {
+  const obj = {};
+  if (!Array.isArray(arr)) return obj;
+  arr.forEach(([name, val]) => { obj[name] = val; });
+  return obj;
+};
+
+const stamPct = (distM, pos, minute, isFT) => {
+  const maxKm = STAM_MAX[posCode(pos)] || 11;
+  // fdh-api gives distance in METERS
+  const distKm = distM > 0 ? distM / 1000 : 0;
+  if (distKm > 0) return Math.max(0, Math.min(1, 1 - distKm / maxKm));
+  const min = isFT ? 90 : Math.max(parseInt(minute) || 0, 1);
+  return Math.max(0.05, 1 - (min / 90) * 0.6);
+};
+const stamColor = p => p > .55 ? 'var(--stamina-hi)' : p > .28 ? 'var(--stamina-mid)' : 'var(--stamina-lo)';
+const minLbl = (m, ext) => !m ? '--' : ext > 0 ? `${m}+${ext}'` : `${m}'`;
+
+// ── SCHEDULE ──────────────────────────────────────────────────────────
+async function loadSchedule() {
+  const sel = document.getElementById('matchSel');
+  sel.innerHTML = '<option value="">Discovering WC 2026 season…</option>';
+  try {
+    if (!SEASON_2026) {
+      const sd = await get(`${FIFA}/seasons?idCompetition=${COMP}&count=20&language=${LANG}`);
+      const s = sd?.Results?.find(x => tl(x.Name)?.includes('2026') || x.StartDate?.startsWith('2026'));
+      if (s) SEASON_2026 = s.IdSeason;
+      else {
+        for (const id of [285023, 285063, 340050]) {
+          try {
+            const d = await get(`${FIFA}/calendar/matches?idCompetition=${COMP}&idSeason=${id}&count=5&language=${LANG}`);
+            if (d?.Results?.length) { SEASON_2026 = id; break; }
+          } catch(_) {}
+        }
+      }
+    }
+    if (!SEASON_2026) throw new Error('Could not discover WC 2026 season ID');
+
+    const data = await get(`${FIFA}/calendar/matches?idCompetition=${COMP}&idSeason=${SEASON_2026}&count=200&language=${LANG}`);
+    if (!data?.Results?.length) throw new Error('No matches returned');
+    allMatches = data.Results;
+    buildSelector(allMatches);
+  } catch(e) {
+    sel.innerHTML = '<option value="">⚠ Could not load schedule</option>';
+    document.getElementById('statsPane').innerHTML =
+      `<div class="errbox">Schedule load failed: ${e.message}<small>The FIFA API is called directly from your browser. Visit <a href="https://www.fifa.com" style="color:var(--accent)">fifa.com</a> first if requests are blocked.</small></div>`;
+  }
+}
+
+function buildSelector(matches) {
+  const sel = document.getElementById('matchSel');
+  sel.innerHTML = '<option value="">— Select a match —</option>';
+  const groups = {};
+  matches.forEach((m, i) => {
+    const stage = tl(m.StageName) || tl(m.GroupName) || 'Matches';
+    (groups[stage] = groups[stage] || []).push({ m, i });
+  });
+  Object.entries(groups).forEach(([gName, arr]) => {
+    const og = document.createElement('optgroup');
+    og.label = gName;
+    arr.forEach(({ m, i }) => {
+      const home = tl(m.HomeTeamName) || tl(m.Home?.TeamName) || 'TBD';
+      const away = tl(m.AwayTeamName) || tl(m.Away?.TeamName) || 'TBD';
+      const d = m.Date ? new Date(m.Date).toLocaleDateString('en-GB', { month:'short', day:'numeric' }) : '';
+      const hs = m.HomeTeam?.Score ?? m.Home?.Score ?? m.HomeTeamScore ?? '';
+      const as_ = m.AwayTeam?.Score ?? m.Away?.Score ?? m.AwayTeamScore ?? '';
+      const score = (hs !== '' && as_ !== '') ? ` ${hs}–${as_}` : '';
+      const tag = m.MatchStatus === 1 ? ' ●' : m.MatchStatus === 0 ? ' [FT]' : '';
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = `${d} ${home} vs ${away}${score}${tag}`;
+      if (m.MatchStatus === 1) opt.style.color = '#ee5555';
+      og.appendChild(opt);
+    });
+    sel.appendChild(og);
+  });
+
+  // Auto-select the match closest to now:
+  // Prefer a live match (kick-off passed, not finished), then the next upcoming.
+  // "Closest" = smallest absolute difference between kick-off time and now.
+  const now = Date.now();
+  let bestIdx = null;
+  let bestDiff = Infinity;
+
+  matches.forEach((m, i) => {
+    if (!m.Date) return;
+    const isFT = m.MatchStatus === 0;
+    if (isFT) return; // skip finished matches
+
+    const kickoff = new Date(m.Date).getTime();
+    const diff = Math.abs(now - kickoff);
+    if (diff < bestDiff) {
+      bestDiff = diff;
+      bestIdx = i;
+    }
+  });
+
+  if (bestIdx !== null) {
+    sel.value = bestIdx;
+    loadMatch(bestIdx);
+  }
+}
+
+// ── LOAD MATCH ────────────────────────────────────────────────────────
+async function loadMatch(idx, silent = false) {
+  if (idx === '') return;
+  const meta = allMatches[+idx];
+  if (!meta) return;
+
+  const idMatch = meta.IdMatch;
+  const idIFES  = meta.Properties?.IdIFES;
+
+  if (!silent) showLoader();
+
+  try {
+    const [liveRes, tlRes, teamStatsRes, playerStatsRes] = await Promise.allSettled([
+      get(`${FIFA}/live/football/${idMatch}?language=${LANG}`),
+      get(`${FIFA}/timelines/${idMatch}?language=${LANG}`),
+      idIFES ? get(`${FDH}/match/${idIFES}/teams.json`) : Promise.reject('no idIFES'),
+      idIFES ? get(`${FDH}/match/${idIFES}/players.json`) : Promise.reject('no idIFES'),
+    ]);
+
+    const live        = liveRes.status === 'fulfilled' ? liveRes.value : null;
+    const timeline    = tlRes.status === 'fulfilled' ? tlRes.value : null;
+    const teamStats   = teamStatsRes.status === 'fulfilled' ? teamStatsRes.value : null;
+    const playerStats = playerStatsRes.status === 'fulfilled' ? playerStatsRes.value : null;
+
+    if (!live) throw new Error('Live/lineup data unavailable');
+
+    render(live, timeline, teamStats, playerStats, meta);
+  } catch(e) {
+    if (silent) return; // keep existing content on background refresh failure
+    clearLoader();
+    document.getElementById('statsPane').innerHTML =
+      `<div class="errbox">${e.message}<small>Make sure your browser can reach api.fifa.com and fdh-api.fifa.com. Try visiting fifa.com/match-centre first.</small></div>`;
+    document.getElementById('homeRows').innerHTML = '<div class="nodata">–</div>';
+    document.getElementById('awayRows').innerHTML = '<div class="nodata">–</div>';
+  }
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────
+function render(live, timeline, teamStats, playerStats, meta) {
+  clearLoader();
+
+  const HT = live.HomeTeam || {};
+  const AT = live.AwayTeam || {};
+
+  // Scores
+  const hs  = HT.Score ?? live.HomeTeamScore ?? meta?.Home?.Score ?? 0;
+  const as_ = AT.Score ?? live.AwayTeamScore ?? meta?.Away?.Score ?? 0;
+
+  const mStatus = live.MatchStatus ?? meta?.MatchStatus;
+  const minute  = live.MatchTime ?? '';
+
+  // Three states, derived purely from clock + isFT:
+  //   UPCOMING  — kick-off is still in the future
+  //   LIVE      — kick-off has passed and match is not finished
+  //   FINISHED  — mStatus === 0 (the one API value we trust)
+  const kickoff   = meta?.Date ? new Date(meta.Date).getTime() : null;
+  const now       = Date.now();
+  const isFT      = mStatus === 0;
+  const isLive_   = kickoff && now >= kickoff && !isFT;
+  const isUpcoming = !isLive_ && !isFT;
+
+  let statusTxt;
+  if (isFT) {
+    statusTxt = 'Full Time';
+  } else if (isLive_) {
+    statusTxt = minute ? `🟢 ${minute}` : '🟢 In Progress';
+  } else {
+    const d = kickoff ? new Date(kickoff).toLocaleString('en-GB', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' }) : '';
+    statusTxt = `Upcoming${d ? ' · ' + d : ''}`;
+  }
+
+  const hName = tl(HT.TeamName) || tl(meta?.HomeTeamName) || tl(meta?.Home?.TeamName) || 'Home';
+  const aName = tl(AT.TeamName) || tl(meta?.AwayTeamName) || tl(meta?.Away?.TeamName) || 'Away';
+  const hCode = HT.TeamCountryCode || HT.IdCountry || '';
+  const aCode = AT.TeamCountryCode || AT.IdCountry || '';
+
+  // Update topbar & scoreboard
+  document.getElementById('topScore').textContent   = `${hs} : ${as_}`;
+  document.getElementById('topMin').textContent     = isLive_ && minute ? minute : '';
+  document.getElementById('livePill').style.display = isLive_ ? '' : 'none';
+  document.getElementById('topStatus').textContent  = statusTxt;
+  document.getElementById('sbScore').textContent    = `${hs} : ${as_}`;
+  document.getElementById('sbHome').textContent     = hCode || hName.slice(0,3).toUpperCase();
+  document.getElementById('sbAway').textContent     = aCode || aName.slice(0,3).toUpperCase();
+  document.getElementById('sbStat').textContent     = statusTxt;
+  document.getElementById('homeName').textContent   = hName;
+  document.getElementById('awayName').textContent   = aName;
+  document.getElementById('homeFlag').textContent   = flag(hCode);
+  document.getElementById('awayFlag').textContent   = flag(aCode);
+  document.getElementById('homeForm').textContent   = HT.Tactics || '';
+  document.getElementById('awayForm').textContent   = AT.Tactics || '';
+
+  // Build player events from timeline (goals, cards, subs)
+  const pevents = buildPlayerEvents(timeline, HT, AT);
+
+  // Build per-player stat lookup from fdh-api players.json
+  // playerStats is an object keyed by playerId (string) → array of [name, val, bool]
+  const pstats = {};
+  if (playerStats && typeof playerStats === 'object') {
+    Object.entries(playerStats).forEach(([pid, arr]) => {
+      pstats[String(pid)] = parseStatArray(arr);
+    });
+  }
+
+  // Build per-team stat lookup from fdh-api teams.json
+  // teamStats is an object keyed by teamId (string) → array of [name, val, bool]
+  const hStats = teamStats ? parseStatArray(teamStats[String(HT.IdTeam)] || []) : {};
+  const aStats = teamStats ? parseStatArray(teamStats[String(AT.IdTeam)] || []) : {};
+
+  renderTeam('home', HT, pevents, pstats, minute, isFT);
+  renderTeam('away', AT, pevents, pstats, minute, isFT);
+  renderStats(hStats, aStats, hName, aName, mStatus);
+  renderPBP(timeline, HT, AT);
+  renderPitch(HT, AT, pevents, timeline);
+
+  if (liveTimer) { clearTimeout(liveTimer); liveTimer = null; }
+  scheduleRefresh(meta, isFT, isLive_);
+}
+
+// ── PLAYER EVENTS FROM LIVE DATA + TIMELINE ───────────────────────────
+// Goals/Bookings/Substitutions are more reliably parsed from the structured
+// arrays on the HomeTeam/AwayTeam objects in the live endpoint, not the timeline.
+// The timeline event types for goals vary and IdSubPlayer on goal events is the
+// fouled player (for penalties), NOT an assister.
+function buildPlayerEvents(timeline, HT, AT) {
+  const ev = {};
+  const ensure = pid => {
+    const id = String(pid);
+    if (!ev[id]) ev[id] = { goals:0, assists:0, yellow:false, red:false, subOff:false, subOn:false };
+    return id;
+  };
+
+  // ── Goals — from the Goals array on each team object ─────────────
+  // Structure: [{ IdPlayer, IdAssistPlayer, Type, ... }]
+  // Type 3 = own goal (scored by this player for the opponent — still show on player)
+  const processGoals = (goalsArr) => {
+    (goalsArr || []).forEach(g => {
+      if (g.IdPlayer) {
+        const id = ensure(g.IdPlayer);
+        ev[id].goals++;
+      }
+      if (g.IdAssistPlayer) {
+        const id = ensure(g.IdAssistPlayer);
+        ev[id].assists++;
+      }
+    });
+  };
+  processGoals(HT.Goals);
+  processGoals(AT.Goals);
+
+  // ── Bookings — from Bookings array on each team ───────────────────
+  // Card: 1=yellow, 2=red, 3=yellow+red (second yellow)
+  const processBookings = (bookingsArr) => {
+    (bookingsArr || []).forEach(b => {
+      if (!b.IdPlayer) return;
+      const id = ensure(b.IdPlayer);
+      if (b.Card === 1) ev[id].yellow = true;
+      if (b.Card === 2) ev[id].red = true;
+      if (b.Card === 3) { ev[id].yellow = true; ev[id].red = true; }
+    });
+  };
+  processBookings(HT.Bookings);
+  processBookings(AT.Bookings);
+
+  // ── Substitutions — from Substitutions array on each team ────────
+  // IdPlayerOff = leaving, IdPlayerOn = coming on
+  const processSubs = (subsArr) => {
+    (subsArr || []).forEach(s => {
+      if (s.IdPlayerOff) { const id = ensure(s.IdPlayerOff); ev[id].subOff = true; }
+      if (s.IdPlayerOn)  { const id = ensure(s.IdPlayerOn);  ev[id].subOn  = true; }
+    });
+  };
+  processSubs(HT.Substitutions);
+  processSubs(AT.Substitutions);
+
+  return ev;
+}
+
+// ── RENDER TEAM PANEL ─────────────────────────────────────────────────
+function renderTeam(side, team, pevents, pstats, minute, isFT) {
+  const el = document.getElementById(side === 'home' ? 'homeRows' : 'awayRows');
+  const players = team.Players || [];
+  if (!players.length) { el.innerHTML = '<div class="nodata">Lineup not yet available</div>'; return; }
+
+  // Status 1 = starter, 2 = substitute/bench
+  const starters = players.filter(p => p.Status === 1);
+  const subs     = players.filter(p => p.Status !== 1);
+
+  let html = renderRows(starters, pevents, pstats, minute, isFT);
+  if (subs.length) html += '<div class="sec-div">Substitutes</div>' + renderRows(subs, pevents, pstats, minute, isFT);
+  el.innerHTML = html || '<div class="nodata">No player data</div>';
+}
+
+function renderRows(players, pevents, pstats, minute, isFT) {
+  return players.map(p => {
+    const pid  = String(p.IdPlayer || '');
+    const ev   = pevents[pid] || {};
+    const ps   = pstats[pid]  || {};
+    const nm   = pName(p);
+    const num  = p.ShirtNumber || '';
+    const pos  = p.Position; // 0=GK, 1=DEF, 2=MID, 3=FWD
+    const isGK = pos === 0;
+    const isCap = p.Captain;
+
+    const goals   = ev.goals || 0;
+    const assists = ev.assists || 0;
+
+    // fdh-api player stats use exact key names from the teams.json (same format)
+    const shots = ps['AttemptAtGoal'] ?? 0;
+    const passes     = ps['PassesCompleted'] ?? 0;
+    const distM      = ps['TotalDistance'] ?? 0;  // in meters
+    const distKm     = distM > 0 ? distM / 1000 : 0;
+
+    const sp = stamPct(distM, pos, minute, isFT);
+    const sw = Math.round(sp * 100);
+    const sc = stamColor(sp);
+
+    let cardHtml = '';
+    if (ev.red && ev.yellow) cardHtml = `<span class="yrcard"><span class="ycard"></span><span class="rcard"></span></span>`;
+    else if (ev.red)         cardHtml = `<span class="rcard"></span>`;
+    else if (ev.yellow)      cardHtml = `<span class="ycard"></span>`;
+
+    const rowCls  = `prow${ev.subOff?' suboff':''}${ev.subOn?' subon':''}`;
+    const nameCls = `pname${isGK?' gk':''}${isCap?' cap':''}`;
+
+    return `<div class="${rowCls}">
+      <div class="pnum">${num}</div>
+      <div class="${nameCls}" title="${nm} – pos:${pos}">${nm}</div>
+      <div class="sc${goals?' goal':''}">${goals||''}</div>
+      <div class="sc${assists?' v':''}">${assists||''}</div>
+      <div class="sc${shots?' v':''}">${shots||''}</div>
+      <div class="sc${passes?' v':''}">${passes||''}</div>
+      <div class="card-box">${cardHtml}</div>
+      <div>
+        <div class="stam-wrap" title="${distKm>0?distKm.toFixed(1)+'km · ':''}Stamina ~${sw}%">
+          <div class="stam-fill" style="width:${sw}%;background:${sc}"></div>
+        </div>
+        ${distKm>0?`<div class="stam-km">${distKm.toFixed(1)}km</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── RENDER STATS ──────────────────────────────────────────────────────
+// hStats / aStats are plain objects from parseStatArray(fdh-api teams.json)
+function renderStats(hStats, aStats, hName, aName, mStatus) {
+  const pane = document.getElementById('statsPane');
+
+  const GROUPS = [
+    { label: 'Attack', items: [
+      ['Shots on Target',    'AttemptAtGoalOnTarget'],
+      ['Total Shots',        'AttemptAtGoal'],
+      ['Blocked Shots',      'AttemptAtGoalBlocked'],
+      ['Shots Inside Box',   'AttemptAtGoalInsideThePenaltyArea'],
+      ['Corners',            'Corners'],
+      ['Offsides',           'Offsides'],
+      ['xG',                 'XG'],
+    ]},
+    { label: 'Possession', items: [
+      ['Ball Possession %',  'Possession'],
+      ['Total Passes',       'Passes'],
+      ['Passes Completed',   'PassesCompleted'],
+      ['Crosses',            'Crosses'],
+      ['Dribbles',           'ForcedTurnovers'],
+    ]},
+    { label: 'Defence', items: [
+      ['Tackles Won',        'FoulsAgainst'],
+      ['Clearances',         'GoalKicks'],
+      ['GK Saves',           'GKSaves'],
+      ['Fouls Committed',    'FoulsFor'],
+      ['Yellow Cards',       'YellowCards'],
+      ['Red Cards',          'RedCards'],
+    ]},
+    { label: 'Physical', items: [
+      ['Total Distance (km)','TotalDistance'],
+      ['High Speed Running', 'DistanceHighSpeedRunning'],
+      ['Sprinting Distance', 'DistanceHighSpeedSprinting'],
+      ['Top Speed (km/h)',   'TopSpeed'],
+    ]},
+  ];
+
+  const distKeys = new Set(['TotalDistance','DistanceHighSpeedRunning','DistanceHighSpeedSprinting']);
+
+  let html = '', hasData = false;
+
+  GROUPS.forEach(grp => {
+    let ghtml = '';
+    grp.items.forEach(([lbl, key]) => {
+      let hv = hStats[key] ?? null;
+      let av = aStats[key] ?? null;
+      if (hv === null && av === null) return;
+
+      // Convert meters → km for distance keys
+      if (distKeys.has(key)) {
+        if (hv !== null) hv = (hv / 1000).toFixed(1);
+        if (av !== null) av = (av / 1000).toFixed(1);
+      }
+      // Possession is 0–1 fraction → show as %
+      if (key === 'Possession') {
+        if (hv !== null) hv = Math.round(hv * 100);
+        if (av !== null) av = Math.round(av * 100);
+      }
+
+      hasData = true;
+      const hn  = parseFloat(hv) || 0;
+      const an  = parseFloat(av) || 0;
+      const tot = hn + an;
+      const hp = tot > 0 ? Math.round((hn/tot)*100) : 50;
+      const ap = tot > 0 ? Math.round((an/tot)*100) : 50;
+
+      const hDisp = key === 'Possession' ? `${hv}%` : hv ?? '–';
+      const aDisp = key === 'Possession' ? `${av}%` : av ?? '–';
+
+      ghtml += `<div class="sitem">
+        <div class="slbl">${lbl}</div>
+        <div class="sbars">
+          <div class="sval h">${hDisp}</div>
+          <div class="sbtrack">
+            <div class="sbh" style="width:${hp}%"></div>
+            <div class="sba" style="width:${ap}%"></div>
+          </div>
+          <div class="sval a">${aDisp}</div>
+        </div>
+      </div>`;
+    });
+    if (ghtml) html += `<div class="sgrp">${grp.label}</div>${ghtml}`;
+  });
+
+  if (!hasData) {
+    html = mStatus === 3 || mStatus === 4
+      ? '<div class="nodata">The match has not yet started.</div>'
+      : '<div class="nodata">The data is not yet available.</div>';
+  }
+
+  pane.innerHTML = html;
+}
+
+// ── RENDER PBP ────────────────────────────────────────────────────────
+function renderPBP(timeline, HT, AT) {
+  const pane  = document.getElementById('pbpPane');
+  if (!timeline?.Event?.length) { pane.innerHTML = '<div class="nodata">No play-by-play data available</div>'; return; }
+
+  const hName = tl(HT.TeamName) || 'Home';
+  const aName = tl(AT.TeamName) || 'Away';
+  const hId   = String(HT.IdTeam || '');
+
+  // Event types from actual FIFA data
+  const TYPE = {
+    2:  { i:'▬',  l:'Yellow card',    c:'c-yel' },
+    3:  { i:'▬',  l:'2nd Yellow',     c:'c-red' },
+    4:  { i:'▬',  l:'Red card',       c:'c-red' },
+    5:  { i:'↕',  l:'Substitution',   c:'c-sub' },
+    6:  { i:'⚽', l:'Goal',           c:'c-goal' },
+    7:  { i:'▷',  l:'Kick off',       c:'' },
+    8:  { i:'◼',  l:'Half time',      c:'' },
+    12: { i:'↗',  l:'Attempt',        c:'' },
+    15: { i:'·',  l:'Offside',        c:'' },
+    16: { i:'⌒',  l:'Corner',         c:'' },
+    18: { i:'·',  l:'Foul',           c:'' },
+    26: { i:'◼',  l:'Full time',      c:'' },
+    34: { i:'⚽', l:'Own goal',       c:'c-goal' },
+    41: { i:'⚽', l:'Penalty goal',   c:'c-goal' },
+    57: { i:'🧤', l:'Save',           c:'' },
+    58: { i:'⬡',  l:'VAR review',    c:'c-var' },
+    59: { i:'⬡',  l:'VAR decision',  c:'c-var' },
+    78: { i:'▷',  l:'Resume',         c:'' },
+    79: { i:'·',  l:'Coin toss',      c:'' },
+    83: { i:'⏸',  l:'Delay',          c:'' },
+  };
+
+  // Show only meaningful events (hide coin toss, delay, resume, kick-off clutter)
+  const HIDE = new Set([78, 79, 83]);
+
+  const html = [...timeline.Event]
+    .filter(e => !HIDE.has(e.Type))
+    .reverse()
+    .map(ev => {
+      const cfg    = TYPE[ev.Type] || { i:'·', l: tl(ev.TypeLocalized) || `Event ${ev.Type}`, c:'' };
+      const m      = ev.MatchMinute || '';
+      const ext    = ev.MatchMinuteStoppage || 0;
+      const isHome = String(ev.IdTeam) === hId;
+      const team   = ev.IdTeam ? (isHome ? hName : aName) : '';
+
+      // Build description — use EventDescription if present, else construct
+      let desc = tl(ev.EventDescription) || '';
+      if (!desc) {
+        const pn  = tl(ev.TypeLocalized) || cfg.l;
+        const pid = ev.IdPlayer ? ` — player #${ev.IdPlayer}` : '';
+        desc = pn + pid;
+      }
+
+      return `<div class="pbp">
+        <div class="pbp-min">${minLbl(m, ext)}</div>
+        <div class="pbp-ico ${cfg.c}">${cfg.i}</div>
+        <div>
+          <div class="pbp-txt ${cfg.c}">${desc}</div>
+          ${team ? `<div class="pbp-team">${team}</div>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+
+  pane.innerHTML = html || '<div class="nodata">No events yet</div>';
+}
+
+// ── SMART REFRESH SCHEDULER ───────────────────────────────────────────
+//  • Match FINISHED (isFT)            → no refresh
+//  • Match LIVE (MatchStatus 1)       → every 60s
+//  • Kick-off within 30 min           → every 5 min (light polling, catch lineup drop)
+//  • Match started ≤ 130 min ago      → every 60s (may still be live / ET / pens)
+//  • Match starts > 30 min from now   → no refresh
+function scheduleRefresh(meta, isFT, isLive_) {
+  if (isFT) return;
+
+  const kickoff = meta?.Date ? new Date(meta.Date).getTime() : null;
+  const now     = Date.now();
+
+  let delay = null;
+
+  if (isLive_) {
+    delay = 60000;  // in play — every 60s
+  } else if (kickoff) {
+    const minsUntil = (kickoff - now) / 60000;
+    const minsSince = (now - kickoff) / 60000;
+    if (minsSince >= 0 && minsSince <= 130) {
+      delay = 60000;  // match window — every 60s
+    } else if (minsUntil > 0 && minsUntil <= 30) {
+      delay = 300000; // approaching kick-off — every 5 min
+    }
+  }
+
+  if (delay !== null) {
+    liveTimer = setTimeout(() => {
+      const idx = document.getElementById('matchSel').value;
+      if (idx !== '') loadMatch(idx, true); // silent — keep current content visible
+    }, delay);
+  }
+}
+
+// ── UI ────────────────────────────────────────────────────────────────
+const SPIN = '<div class="loader-wrap"><div class="spinner"></div><div style="font-size:14px;color:var(--text-dim)">Loading…</div></div>';
+function showLoader() {
+  document.getElementById('statsPane').innerHTML = SPIN;
+  document.getElementById('pbpPane').innerHTML   = '';
+  document.getElementById('homeRows').innerHTML  = SPIN;
+  document.getElementById('awayRows').innerHTML  = SPIN;
+}
+function clearLoader() {}
+
+function setTab(t) {
+  currentTab = t;
+  document.getElementById('statsPane').style.display = t==='stats' ? '' : 'none';
+  document.getElementById('pbpPane').style.display   = t==='pbp'   ? '' : 'none';
+  document.getElementById('t-stats').className = 'tab' + (t==='stats'?' on':'');
+  document.getElementById('t-pbp').className   = 'tab' + (t==='pbp'?' on':'');
+}
+
+function doRefresh() {
+  const idx = document.getElementById('matchSel').value;
+  if (idx !== '') loadMatch(idx); else loadSchedule();
+}
+
+document.getElementById('matchSel').addEventListener('change', e => {
+  if (liveTimer) { clearTimeout(liveTimer); liveTimer = null; }
+  loadMatch(e.target.value);
+});
+loadSchedule();
+
+// ── PITCH RENDERING (landscape: home attacks left→right) ─────────────
+// ViewBox: 420 × 160. Home half = left (x 0–210), Away half = right (x 210–420).
+// Home GK on left edge, home attackers toward centre. Away GK on right edge.
+
+function renderPitch(HT, AT, pevents, timeline) {
+  const placeholder = document.getElementById('pitchPlaceholder');
+  const svg = document.getElementById('pitchSvg');
+
+  // Build the LIVE lineup by applying substitutions from the timeline
+  const hPlayers = getLiveLineup(HT.Players || [], HT);
+  const aPlayers = getLiveLineup(AT.Players || [], AT);
+
+  if (!hPlayers.length && !aPlayers.length) {
+    placeholder.style.display = '';
+    svg.style.display = 'none';
+    return;
+  }
+  placeholder.style.display = 'none';
+  svg.style.display = 'block';
+
+  const activeZone = getActiveZone(timeline, HT.IdTeam);
+
+  const W = 420, H = 272;
+  const PAD = 6; // pitch inset from SVG edge
+
+  const GRASS1 = '#1a5c2a';
+  const GRASS2 = '#1e6830';
+  const LINE   = 'rgba(255,255,255,0.35)';
+  const H_COL  = '#3a8fd4';
+  const A_COL  = '#e05050';
+
+  const ZONE_COLORS = {
+    home_def:     'rgba(239,68,68,0.16)',
+    home_mid:     'rgba(251,191,36,0.13)',
+    home_attack:  'rgba(52,211,153,0.18)',
+    away_def:     'rgba(239,68,68,0.16)',
+    away_mid:     'rgba(251,191,36,0.13)',
+    away_attack:  'rgba(52,211,153,0.18)',
+    penalty_home: 'rgba(52,211,153,0.32)',
+    penalty_away: 'rgba(239,68,68,0.32)',
+  };
+
+  let out = '';
+
+  // ── Pitch stripes (vertical bands along the length) ────────────────
+  const numStripes = 10;
+  const stripeW = W / numStripes;
+  for (let i = 0; i < numStripes; i++) {
+    out += `<rect x="${i*stripeW}" y="0" width="${stripeW}" height="${H}" fill="${i%2===0?GRASS1:GRASS2}"/>`;
+  }
+
+  // ── Zone highlight ────────────────────────────────────────────────
+  if (activeZone && ZONE_COLORS[activeZone]) {
+    const zr = zoneRect(activeZone, W, H, PAD);
+    out += `<rect x="${zr.x}" y="${zr.y}" width="${zr.w}" height="${zr.h}" fill="${ZONE_COLORS[activeZone]}" rx="3">
+      <animate attributeName="opacity" values="1;0.4;1" dur="1.8s" repeatCount="indefinite"/>
+    </rect>`;
+  }
+
+  // ── Pitch lines ────────────────────────────────────────────────────
+  const pL = PAD, pR = W-PAD, pT = PAD, pB = H-PAD;
+  const pW = pR-pL, pH = pB-pT;
+  const midX = W/2, midY = H/2;
+
+  // Border
+  out += `<rect x="${pL}" y="${pT}" width="${pW}" height="${pH}" fill="none" stroke="${LINE}" stroke-width="1"/>`;
+  // Halfway line
+  out += `<line x1="${midX}" y1="${pT}" x2="${midX}" y2="${pB}" stroke="${LINE}" stroke-width="0.8"/>`;
+  // Centre circle (radius proportional — pitch is ~105×68m, our pixels 408×148, so r≈9.2m scaled)
+  const cr = Math.round(pH * 9.15 / 68); // ~20px
+  out += `<circle cx="${midX}" cy="${midY}" r="${cr}" fill="none" stroke="${LINE}" stroke-width="0.8"/>`;
+  out += `<circle cx="${midX}" cy="${midY}" r="1.5" fill="${LINE}"/>`;
+
+  // Penalty boxes: 40.32m wide × 16.5m deep
+  // Scale: pH = 68m, so 40.32m = pH*40.32/68 ≈ 88px; 16.5m = pW/2*16.5/52.5 ≈ 32px
+  const pbH_px = Math.round(pH * 40.32 / 68);     // box height (across pitch)
+  const pbD_px = Math.round(pW/2 * 16.5 / 52.5);  // box depth (into pitch)
+  const pbY = midY - pbH_px/2;
+
+  // Left (home) penalty box
+  out += `<rect x="${pL}" y="${pbY}" width="${pbD_px}" height="${pbH_px}" fill="none" stroke="${LINE}" stroke-width="0.8"/>`;
+  // Left goal box (5.5m deep, 18.32m wide)
+  const gbH_px = Math.round(pH * 18.32 / 68);
+  const gbD_px = Math.round(pW/2 * 5.5 / 52.5);
+  out += `<rect x="${pL}" y="${midY-gbH_px/2}" width="${gbD_px}" height="${gbH_px}" fill="none" stroke="${LINE}" stroke-width="0.6"/>`;
+  // Left penalty spot (11m from goal line)
+  const psD = Math.round(pW/2 * 11 / 52.5);
+  out += `<circle cx="${pL+psD}" cy="${midY}" r="1.2" fill="${LINE}"/>`;
+  // Left penalty arc
+  out += `<path d="M ${pL+pbD_px} ${midY-Math.round(pH*7/68)} A ${cr} ${cr} 0 0 0 ${pL+pbD_px} ${midY+Math.round(pH*7/68)}" fill="none" stroke="${LINE}" stroke-width="0.8"/>`;
+
+  // Right (away) penalty box
+  out += `<rect x="${pR-pbD_px}" y="${pbY}" width="${pbD_px}" height="${pbH_px}" fill="none" stroke="${LINE}" stroke-width="0.8"/>`;
+  // Right goal box
+  out += `<rect x="${pR-gbD_px}" y="${midY-gbH_px/2}" width="${gbD_px}" height="${gbH_px}" fill="none" stroke="${LINE}" stroke-width="0.6"/>`;
+  // Right penalty spot
+  out += `<circle cx="${pR-psD}" cy="${midY}" r="1.2" fill="${LINE}"/>`;
+  // Right penalty arc
+  out += `<path d="M ${pR-pbD_px} ${midY-Math.round(pH*7/68)} A ${cr} ${cr} 0 0 1 ${pR-pbD_px} ${midY+Math.round(pH*7/68)}" fill="none" stroke="${LINE}" stroke-width="0.8"/>`;
+
+  // Goals (nets on left and right)
+  const goalH = Math.round(pH * 7.32 / 68);
+  out += `<rect x="${pL-5}" y="${midY-goalH/2}" width="5" height="${goalH}" fill="rgba(255,255,255,0.12)" stroke="${LINE}" stroke-width="0.6"/>`;
+  out += `<rect x="${pR}"   y="${midY-goalH/2}" width="5" height="${goalH}" fill="rgba(255,255,255,0.12)" stroke="${LINE}" stroke-width="0.6"/>`;
+
+  // Corner arcs
+  const ca = 4;
+  out += `<path d="M ${pL} ${pT+ca} A ${ca} ${ca} 0 0 1 ${pL+ca} ${pT}" fill="none" stroke="${LINE}" stroke-width="0.7"/>`;
+  out += `<path d="M ${pR-ca} ${pT} A ${ca} ${ca} 0 0 1 ${pR} ${pT+ca}" fill="none" stroke="${LINE}" stroke-width="0.7"/>`;
+  out += `<path d="M ${pL} ${pB-ca} A ${ca} ${ca} 0 0 0 ${pL+ca} ${pB}" fill="none" stroke="${LINE}" stroke-width="0.7"/>`;
+  out += `<path d="M ${pR-ca} ${pB} A ${ca} ${ca} 0 0 0 ${pR} ${pB-ca}" fill="none" stroke="${LINE}" stroke-width="0.7"/>`;
+
+  // ── Formation labels ──────────────────────────────────────────────
+  const hT = HT.Tactics || '';
+  const aT = AT.Tactics || '';
+  if (hT) out += `<text x="${pL+3}" y="${pB-3}" font-size="8.4" fill="rgba(255,255,255,0.4)" font-family="'Segoe UI',sans-serif">${hT}</text>`;
+  if (aT) out += `<text x="${pR-3}" y="${pB-3}" text-anchor="end" font-size="8.4" fill="rgba(255,255,255,0.4)" font-family="'Segoe UI',sans-serif">${aT}</text>`;
+
+  // ── Place players ─────────────────────────────────────────────────
+  // Home: left half, GK near left edge, attackers near centre
+  // Away: right half, GK near right edge, attackers near centre
+  const hPositions = calcFormationPositions(hPlayers, HT.Tactics, W, H, PAD, 'home');
+  const aPositions = calcFormationPositions(aPlayers, AT.Tactics, W, H, PAD, 'away');
+
+  out += renderPlayerDots(hPositions, pevents, H_COL, W, H);
+  out += renderPlayerDots(aPositions, pevents, A_COL, W, H);
+
+  svg.innerHTML = out;
+}
+
+// Build the current live lineup by starting with starters and applying subs.
+// Uses the structured Substitutions array (IdPlayerOff/IdPlayerOn) which is
+// unambiguous, unlike timeline events where IdPlayer/IdSubPlayer direction varies.
+function getLiveLineup(allPlayers, teamObj) {
+  const lineup = allPlayers
+    .filter(p => p.Status === 1)
+    .map(p => ({ ...p }));
+
+  const squad = {};
+  allPlayers.forEach(p => { squad[String(p.IdPlayer)] = p; });
+
+  (teamObj.Substitutions || []).forEach(s => {
+    const outId = String(s.IdPlayerOff || '');
+    const inId  = String(s.IdPlayerOn  || '');
+    if (!outId || !inId) return;
+
+    const outIdx = lineup.findIndex(p => String(p.IdPlayer) === outId);
+    if (outIdx === -1) return;
+
+    const inPlayer = squad[inId];
+    if (!inPlayer) return;
+
+    lineup[outIdx] = {
+      ...inPlayer,
+      Position: lineup[outIdx].Position, // inherit formation slot
+      _subOn: true,
+    };
+  });
+
+  return lineup;
+}
+
+function parseFormation(tactics) {
+  if (!tactics) return [4, 3, 3];
+  const parts = tactics.split('-').map(Number).filter(n => !isNaN(n) && n > 0);
+  return parts.length >= 2 ? parts : [4, 3, 3];
+}
+
+// Left-to-right formation positions
+// Home: x goes from left edge (GK) toward centre (FWD)
+// Away: x goes from right edge (GK) toward centre (FWD)
+function calcFormationPositions(players, tactics, W, H, PAD, side) {
+  const formation = parseFormation(tactics);
+
+  // Group by position code
+  const gks  = players.filter(p => p.Position === 0);
+  const defs = players.filter(p => p.Position === 1);
+  const mids = players.filter(p => p.Position === 2);
+  const fwds = players.filter(p => p.Position === 3);
+
+  // Build lines: [GK line, def line(s), mid line(s), fwd line(s)]
+  const lines = [gks];
+  const outfield = [...defs, ...mids, ...fwds];
+  let idx = 0;
+  formation.forEach(count => {
+    lines.push(outfield.slice(idx, idx + count));
+    idx += count;
+  });
+  if (idx < outfield.length) lines[lines.length-1].push(...outfield.slice(idx));
+
+  const positions = [];
+  const halfW = W / 2 - PAD;
+  const usableH = H - PAD * 2;
+  const numLines = lines.length;
+
+  lines.forEach((linePlayers, lineIdx) => {
+    if (!linePlayers.length) return;
+
+    // xFrac: 0=own goal end, 1=centre line
+    // Spread lines from 0.06 (GK just off goal line) to 0.92 (attackers near centre)
+    const xFrac = 0.06 + (lineIdx / Math.max(numLines - 1, 1)) * 0.86;
+
+    let x;
+    if (side === 'home') {
+      x = PAD + xFrac * halfW;
+    } else {
+      // Mirror: GK at right, attackers toward centre
+      x = W - PAD - xFrac * halfW;
+    }
+
+    linePlayers.forEach((p, i) => {
+      const n = linePlayers.length;
+      // Spread vertically. For single players, centre them.
+      // Use 80% of pitch height to avoid touching edges
+      const spread = usableH * 0.82;
+      const startY = PAD + (usableH - spread) / 2;
+      const yFrac = n === 1 ? 0.5 : i / (n - 1);
+      const y = startY + yFrac * spread;
+      positions.push({ player: p, x, y });
+    });
+  });
+  return positions;
+}
+
+function renderPlayerDots(positions, pevents, dotColor, W, H) {
+  let out = '';
+  positions.forEach(({ player: p, x, y }) => {
+    const pid     = String(p.IdPlayer || '');
+    const ev      = pevents[pid] || {};
+    const isSubOn = p._subOn || false;
+    const num     = p.ShirtNumber || '?';
+    const nm      = (tl(p.ShortName) || tl(p.PlayerName) || '').split(' ').pop() || '';
+    const R       = 8.5;
+
+    // Green ring for players who came on as substitutes
+    const strokeCol = isSubOn ? '#3dd68c' : 'rgba(255,255,255,0.5)';
+    const strokeW   = isSubOn ? 2 : 0.8;
+
+    out += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${R}" fill="${dotColor}" stroke="${strokeCol}" stroke-width="${strokeW}"/>`;
+    out += `<text x="${x.toFixed(1)}" y="${(y+3).toFixed(1)}" text-anchor="middle" font-size="7.8" font-weight="700" fill="#fff" font-family="'Segoe UI',sans-serif">${num}</text>`;
+
+    // Name label: above if in bottom half, below if in top half
+    const nameY = y > H/2 ? y + R + 8.5 : y - R - 2.5;
+    out += `<text x="${x.toFixed(1)}" y="${nameY.toFixed(1)}" text-anchor="middle" font-size="7.2" fill="rgba(255,255,255,0.88)" font-family="'Segoe UI',sans-serif">${nm}</text>`;
+
+    // Card badge (top-right of dot)
+    if (ev.red)         out += `<rect x="${(x+5).toFixed(1)}" y="${(y-12).toFixed(1)}" width="5" height="7" rx="0.5" fill="#cc2222"/>`;
+    else if (ev.yellow) out += `<rect x="${(x+5).toFixed(1)}" y="${(y-12).toFixed(1)}" width="5" height="7" rx="0.5" fill="#e0c000"/>`;
+
+    // Goal badge
+    if (ev.goals > 0) out += `<text x="${(x-5).toFixed(1)}" y="${(y-7).toFixed(1)}" font-size="9.6" fill="#3dd68c">⚽</text>`;
+  });
+  return out;
+}
+
+// Zone detection from most recent positional PBP event
+function getActiveZone(timeline, homeTeamId) {
+  if (!timeline?.Event?.length) return null;
+  const events = [...timeline.Event].reverse();
+  for (const ev of events) {
+    const isHome = String(ev.IdTeam) === String(homeTeamId);
+    const x = ev.PositionX; // FIFA: 0=home end, 100=away end (home attacks toward 100)
+    const t = ev.Type;
+    if (x === undefined || x === null) continue;
+
+    if (t === 6 || t === 41 || t === 34) return isHome ? 'penalty_away' : 'penalty_home';
+    if (t === 5 || t === 7 || t === 8 || t === 26 || t === 78 || t === 79) return null;
+
+    if (isHome) {
+      if (x > 83) return 'penalty_away';
+      if (x > 55) return 'home_attack';
+      if (x > 33) return 'home_mid';
+      return 'home_def';
+    } else {
+      if (x < 17) return 'penalty_home';
+      if (x < 45) return 'away_attack';
+      if (x < 67) return 'away_mid';
+      return 'away_def';
+    }
+  }
+  return null;
+}
+
+// Zone → pitch rect in 420×160 landscape viewBox
+// Home attacks left→right: home_def=left third, home_attack=right third of LEFT half
+// Away attacks right→left: away_def=right third, away_attack=left third of RIGHT half
+function zoneRect(zone, W, H, PAD) {
+  const pW = W - PAD*2, pH = H - PAD*2;
+  const thirdW = pW / 3;  // each of the 3 thirds across full width
+  // penalty box depth ~16.5/105 of pitch length
+  const pbD = Math.round(pW/2 * 16.5 / 52.5);
+  const pbH = Math.round(pH * 40.32 / 68);
+  const midY = H/2;
+  const z = {
+    home_def:     { x: PAD,             y: PAD, w: thirdW,   h: pH },
+    home_mid:     { x: PAD+thirdW,      y: PAD, w: thirdW,   h: pH },
+    home_attack:  { x: PAD+thirdW*2,    y: PAD, w: thirdW,   h: pH },
+    away_attack:  { x: PAD,             y: PAD, w: thirdW,   h: pH },
+    away_mid:     { x: PAD+thirdW,      y: PAD, w: thirdW,   h: pH },
+    away_def:     { x: PAD+thirdW*2,    y: PAD, w: thirdW,   h: pH },
+    penalty_home: { x: PAD,             y: midY-pbH/2, w: pbD, h: pbH },
+    penalty_away: { x: W-PAD-pbD,       y: midY-pbH/2, w: pbD, h: pbH },
+  };
+  return z[zone] || { x: 0, y: 0, w: W, h: H };
+}
+</script>
+</body>
+</html>
