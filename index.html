@@ -142,14 +142,15 @@ const FS = {
   "~": {
     dirs: ["projects", "articles"],
     files: {
-      "readme.txt": { desc: "You're already reading it.", url: null },
-      "wc2026-dashboard.html": { desc: "World Cup 2026: Football Manager style", url: "http://maranas.github.io/wc2026-dashboard.html" }
+      "readme.txt": { desc: "You're already reading it.", url: null }
     }
   },
   "projects": {
     dirs:  [],
     files: {
-      "github": { desc: "All my open-source repos.", url: "https://github.com/maranas" }
+      "github": { desc: "All my open-source repos.", url: "https://github.com/maranas" },
+      "tagalog-wordle": { desc: "Wordle in Tagalog. A react-native-web test." url: "https://maranas.github.io/tagwordle/" },
+      "wc2026-dashboard.html": { desc: "World Cup 2026: Football Manager style", url: "http://maranas.github.io/wc2026-dashboard.html" }
     }
   },
   "articles": {
@@ -164,10 +165,10 @@ const FS = {
   }
 };
 
-const WHOAMI = `Moises — developer, tinkerer,.
+const WHOAMI = `Moises — developer, tinkerer, amateur watchmaker.
 Mostly tinkering. Nowadays with LLMs,
 usually locally if I have run out of tokens.
-Type  help  to see what you can do here.`;
+Type 'help' to see what you can do here.`;
 
 let cwd = "~";           // current directory
 let cmdHistory = [];     // typed command history
