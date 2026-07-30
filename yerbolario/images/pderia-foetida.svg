@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" width="400" height="300">
+  <rect width="400" height="300" fill="#F2ECD8"/>
+  <rect width="400" height="300" fill="none" stroke="#D8CDA8" stroke-width="2"/>
+  <path d="M200,280 Q208.5,179.6 285.7,98.5" stroke="#6B8F7E" stroke-width="3" fill="none" stroke-linecap="round" opacity="0.85"/>
+  <path d="M210.7,257.3 Q185.4,257.4 199.1,189.3 Q234.6,248.9 210.7,257.3 Z" fill="#3F5A52" opacity="0.9"/>
+  <line x1="210.7" y1="257.3" x2="199.1" y2="189.3" stroke="#6B8F7E" stroke-width="1" opacity="0.5"/>
+  <path d="M221.4,234.6 Q219.1,218.2 285.1,208.0 Q231.5,247.8 221.4,234.6 Z" fill="#3F5A52" opacity="0.9"/>
+  <line x1="221.4" y1="234.6" x2="285.1" y2="208.0" stroke="#6B8F7E" stroke-width="1" opacity="0.5"/>
+  <path d="M232.1,211.9 Q210.5,214.0 204.6,139.0 Q249.8,199.2 232.1,211.9 Z" fill="#3F5A52" opacity="0.9"/>
+  <line x1="232.1" y1="211.9" x2="204.6" y2="139.0" stroke="#6B8F7E" stroke-width="1" opacity="0.5"/>
+  <path d="M242.9,189.2 Q241.1,164.2 315.8,161.6 Q258.1,209.1 242.9,189.2 Z" fill="#3F5A52" opacity="0.9"/>
+  <line x1="242.9" y1="189.2" x2="315.8" y2="161.6" stroke="#6B8F7E" stroke-width="1" opacity="0.5"/>
+  <path d="M253.6,166.5 Q231.3,168.7 230.8,85.7 Q273.7,156.8 253.6,166.5 Z" fill="#3F5A52" opacity="0.9"/>
+  <line x1="253.6" y1="166.5" x2="230.8" y2="85.7" stroke="#6B8F7E" stroke-width="1" opacity="0.5"/>
+  <path d="M264.3,143.8 Q262.1,119.3 331.0,122.5 Q276.7,165.1 264.3,143.8 Z" fill="#3F5A52" opacity="0.9"/>
+  <line x1="264.3" y1="143.8" x2="331.0" y2="122.5" stroke="#6B8F7E" stroke-width="1" opacity="0.5"/>
+  <path d="M275.0,121.2 Q255.8,124.0 251.0,57.6 Q291.3,110.5 275.0,121.2 Z" fill="#3F5A52" opacity="0.9"/>
+  <line x1="275.0" y1="121.2" x2="251.0" y2="57.6" stroke="#6B8F7E" stroke-width="1" opacity="0.5"/>
+</svg>
